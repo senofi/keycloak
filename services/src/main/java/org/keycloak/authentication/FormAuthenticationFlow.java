@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
@@ -29,6 +30,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -275,7 +278,14 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processFlow() {
-        return renderForm(null, null);
+        MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
+        String loginHint = processor.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+
+        if (loginHint != null) {
+            formData.add(AuthenticationManager.FORM_USERNAME, loginHint);
+        }
+
+        return renderForm(formData, null);
     }
 
     public Response renderForm(MultivaluedMap<String, String> formData, List<FormMessage> errors) {
